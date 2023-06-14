@@ -8,6 +8,8 @@ import bikeModel from "../models/bike.js";
 import adminsList from "../models/adminList.js";
 import ridecost from "../models/bikecost.js";
 import discountPrize from "../models/discount.js";
+import bikecountModel from "../models/bikecount.js";
+import paymentModel from "../models/payments.js";
 
 // logic
 let tempOTP;
@@ -370,7 +372,7 @@ class UserController {
 
   static adminRegistration = async (req, res) => {
     //object created
-    const { name, email, password, password_confirmation } = req.body;
+    const { name, email, password, password_confirmation, location } = req.body;
 
     const user = await adminsList.findOne({ email: email });
     //if user already exist
@@ -388,6 +390,7 @@ class UserController {
               name: name,
               email: email,
               password: hashPassword,
+              location: location,
             });
             await doc.save();
             const saved_user = await adminsList.findOne({ email: email });
@@ -561,32 +564,81 @@ class UserController {
         // console.log(total_ride);
         // console.log(cost);
         // console.log(cost);
-        //   if (loc != null) {
-        //     // console.log("in");
-        //     var myquery = { bikeId: bikeId };
-        //     var newvalues = {
-        //       $set: { end_time: end_time, cost: cost },
-        //     };
-        //     discountPrize.collection.updateOne(myquery, newvalues);
-        //     return res.send({
-        //       status: "updated",
-        //       message: "updated successfully",
-        //     });
-        //   } else {
-        //     const newloc = new discountPrize({
-        //       location: location,
-        //       reason: reason,
-        //       prize: prize,
-        //     });
-        //     discountPrize.collection.insertOne(newloc);
-        //     return res.send({
-        //       status: "inserted",
-        //       message: "inserted successfully",
-        //     });
-        //   }
-        // } else {
-        //   res.send({ status: "failed", message: "All Fields are Required" });
-        // }
+        const update = { $inc: { count: 1 } };
+        if (bikeId != null) {
+          // console.log("in");
+          var myquery = { bikeId: bikeId };
+          var newvalues = {
+            $set: { end_time: end_time, cost: cost },
+          };
+          bikeModel.collection.updateOne(myquery, newvalues);
+          const bikecount = await bikecountModel.findOne({ bikeId: bikeId });
+          if (bikecount != null) {
+            bikecountModel.collection.updateOne(myquery, update);
+          } else {
+            const newloc = new bikecountModel({
+              bikeId: bikeId,
+              count: 1,
+            });
+            bikecountModel.collection.insertOne(newloc);
+          }
+          return res.send({
+            status: "updated",
+            message: "updated successfully",
+            cost: cost,
+          });
+        }
+      } else {
+        res.send({ status: "failed", message: "All Fields are Required" });
+      }
+    } catch (error) {
+      console.log(error);
+      res.send({ status: "failed", message: "Unable to identify" });
+    }
+  };
+
+  static getJSONValuesByDate = async (req, res) => {
+    const { startDate, endDate } = req.body;
+    try {
+      const query = {
+        date: {
+          $gte: new Date(startDate),
+          $lte: new Date(endDate),
+        },
+      };
+      const results = await bikeModel.collection.find(query).toArray();
+      return res.send({
+        status: "Send",
+        results: results,
+      });
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      client.close();
+    }
+  };
+
+  static paymentmethod = async (req, res) => {
+    try {
+      const { email, name, bikeId, method } = req.body;
+      // console.log(email, name, numberOfBike, bikeId, location, reason);
+      const loc = await adminsList.findOne({ email: email });
+      if (email && name && method && bikeId) {
+        const newloc = new paymentModel({
+          email: email,
+          name: name,
+          bikeId: bikeId,
+          location: loc.location,
+          method: method,
+        });
+
+        paymentModel.collection.insertOne(newloc);
+        return res.send({
+          status: "success",
+          message: method,
+        });
+      } else {
+        res.send({ status: "failed", message: "All Fields are Required" });
       }
     } catch (error) {
       console.log(error);

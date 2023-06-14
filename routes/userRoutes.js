@@ -35,5 +35,7 @@ router.post("/admin/auth", UserController.adminLogin);
 router.post("/admin/register", UserController.adminRegistration);
 router.post("/admin/bikecost", UserController.bikecosting);
 router.post("/admin/bikediscount", UserController.discountprizes);
+router.post("/admin/report", UserController.getJSONValuesByDate);
+router.post("/payment", UserController.paymentmethod);
 
 export default router;
