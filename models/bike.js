@@ -4,6 +4,7 @@ const bikeSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   location: { type: String, required: true, trim: true },
   email: { type: String, required: true, trim: true },
+  user_email: { type: String, required: true, trim: true },
   bikeId: { type: String, required: true, trim: true },
   userId: { type: String, required: true, trim: true },
   start_time: { type: String, required: true, trim: true },

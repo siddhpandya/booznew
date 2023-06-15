@@ -295,12 +295,14 @@ class UserController {
     return timeString;
   }
 
-  static addUserBike = (req, res) => {
+  static addUserBike = async (req, res) => {
     try {
-      const { name, email, bikeId, userId, numberOfBike } = req.body;
+      const { name, email, bikeId, userId, numberOfBike , start_time, user_email} = req.body;
+      const loctemp = await adminsList.findOne({ email:email });
+      console.log(loctemp);
       const time = new Date();
       const date = time.toISOString().split("T")[0];
-      const start_time = String(this.getCurrentTime());
+      // const start_time = String(this.getCurrentTime());
       console.log(start_time);
 
       const userBike = new bikeModel({
@@ -313,6 +315,8 @@ class UserController {
         userId: userId,
         end_time: "",
         cost: 0,
+        location:loctemp.location,
+        user_email:user_email
       });
       // Insert the user bike object into the "bike" collection
       const result = bikeModel.collection.insertOne(userBike);
@@ -528,9 +532,12 @@ class UserController {
       const { email, name, numberOfBike, bikeId, location, reason } = req.body;
       // console.log(email, name, numberOfBike, bikeId, location, reason);
       if (email && name && numberOfBike && bikeId) {
-        const actual_prize = await ridecost.findOne({ location: location });
+        const loctemp = await adminsList.findOne({ email:email });
+
+        const actual_prize = await ridecost.findOne({ location: loctemp.location});
         // console.log("correct1");
         const bike_details = await bikeModel.findOne({ bikeId: bikeId });
+        
         // console.log("correct2");
         const end_time = String(this.getCurrentTime());
         // console.log("correct3");
@@ -598,7 +605,7 @@ class UserController {
   };
 
   static getJSONValuesByDate = async (req, res) => {
-    const { startDate, endDate } = req.body;
+    const { startDate, endDate,location } = req.body;
     try {
       const query = {
         date: {
@@ -613,9 +620,7 @@ class UserController {
       });
     } catch (error) {
       console.error("Error:", error);
-    } finally {
-      client.close();
-    }
+    } 
   };
 
   static paymentmethod = async (req, res) => {
