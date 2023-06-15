@@ -10,7 +10,7 @@ const bikeSchema = new mongoose.Schema({
   start_time: { type: String, required: true, trim: true },
   date: { type: Date, required: true, trim: true },
   numberOfBike: { type: String, required: true, trim: true },
-  end_time: { type: Date, required: true, trim: true },
+  end_time: { type: String, required: true, trim: true },
   cost: { type: Number, required: true, trim: true },
 });
 

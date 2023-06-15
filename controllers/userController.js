@@ -297,8 +297,16 @@ class UserController {
 
   static addUserBike = async (req, res) => {
     try {
-      const { name, email, bikeId, userId, numberOfBike , start_time, user_email} = req.body;
-      const loctemp = await adminsList.findOne({ email:email });
+      const {
+        name,
+        email,
+        bikeId,
+        userId,
+        numberOfBike,
+        start_time,
+        user_email,
+      } = req.body;
+      const loctemp = await adminsList.findOne({ email: email });
       console.log(loctemp);
       const time = new Date();
       const date = time.toISOString().split("T")[0];
@@ -315,8 +323,8 @@ class UserController {
         userId: userId,
         end_time: "",
         cost: 0,
-        location:loctemp.location,
-        user_email:user_email
+        location: loctemp.location,
+        user_email: user_email,
       });
       // Insert the user bike object into the "bike" collection
       const result = bikeModel.collection.insertOne(userBike);
@@ -527,29 +535,38 @@ class UserController {
     return date;
   }
 
-  static rideover = async (req, res) => {
+  static rideoverpayment = async (req, res) => {
     try {
-      const { email, name, numberOfBike, bikeId, location, reason } = req.body;
+      const { email, user_email, name, numberOfBike, bikeId, reason } =
+        req.body;
       // console.log(email, name, numberOfBike, bikeId, location, reason);
-      if (email && name && numberOfBike && bikeId) {
-        const loctemp = await adminsList.findOne({ email:email });
+      if (email && name && numberOfBike && bikeId && user_email) {
+        // const loctemp = await bikeModel.findOne({ email: email });
+        const bike_details = await bikeModel.findOne({
+          bikeId: bikeId,
+          user_email: user_email,
+          email: email,
+        });
+        const location = bike_details.location;
+        // console.log(loctemp);
+        const actual_prize = await ridecost.findOne({
+          location: location,
+        });
+        // console.log(actual_prize);
 
-        const actual_prize = await ridecost.findOne({ location: loctemp.location});
-        // console.log("correct1");
-        const bike_details = await bikeModel.findOne({ bikeId: bikeId });
-        
+        // console.log(bike_details);
         // console.log("correct2");
-        const end_time = String(this.getCurrentTime());
-        // console.log("correct3");
+        const end_time = bike_details.end_time;
+        // console.log(bike_details);
         const discount_check = await discountPrize.findOne({
           location: location,
           reason: reason,
         });
         let cost = 0;
-        // console.log(
-        //   this.convertStringToTime(bike_details.start_time),
-        //   this.convertStringToTime(end_time)
-        // );
+        console.log(
+          this.convertStringToTime(bike_details.start_time),
+          this.convertStringToTime(end_time)
+        );
         let total_time = this.calculateTimeInterval(
           this.convertStringToTime(bike_details.start_time),
           this.convertStringToTime(end_time)
@@ -603,9 +620,59 @@ class UserController {
       res.send({ status: "failed", message: "Unable to identify" });
     }
   };
+  static rideover = async (req, res) => {
+    try {
+      const { email, name, user_email, bikeId, end_time } = req.body;
+      // console.log(email, name, numberOfBike, bikeId, location, reason);
+      if (email && name && bikeId && user_email) {
+        const loctemp = await adminsList.findOne({ email: email });
+
+        // const actual_prize = await ridecost.findOne({
+        //   location: loctemp.location,
+        // });
+        // // console.log("correct1");
+        // const bike_details = await bikeModel.findOne({
+        //   bikeId: bikeId,
+        //   email: email,
+        //   user_email: user_email,
+        // });
+        if (bikeId != null) {
+          var myquery = {
+            bikeId: bikeId,
+            email: email,
+            user_email: user_email,
+          };
+          var newvalues = {
+            $set: { end_time: end_time },
+          };
+          bikeModel.collection.updateOne(myquery, newvalues);
+          const bikecount = await bikecountModel.findOne({ bikeId: bikeId });
+          if (bikecount != null) {
+            bikecountModel.collection.updateOne(myquery, update);
+          } else {
+            const newloc = new bikecountModel({
+              bikeId: bikeId,
+              count: 1,
+            });
+            bikecountModel.collection.insertOne(newloc);
+          }
+          return res.send({
+            status: "updated",
+            message: "updated successfully",
+            end_time: end_time,
+          });
+        }
+      } else {
+        res.send({ status: "failed", message: "All Fields are Required" });
+      }
+    } catch (error) {
+      console.log(error);
+      res.send({ status: "failed", message: "Unable to identify" });
+    }
+  };
 
   static getJSONValuesByDate = async (req, res) => {
-    const { startDate, endDate,location } = req.body;
+    const { startDate, endDate, location } = req.body;
     try {
       const query = {
         date: {
@@ -620,21 +687,25 @@ class UserController {
       });
     } catch (error) {
       console.error("Error:", error);
-    } 
+    }
   };
 
   static paymentmethod = async (req, res) => {
     try {
-      const { email, name, bikeId, method } = req.body;
+      const { email, name, bikeId, method, user_email } = req.body;
       // console.log(email, name, numberOfBike, bikeId, location, reason);
-      const loc = await adminsList.findOne({ email: email });
-      if (email && name && method && bikeId) {
+      const loc = await adminsList.findOne({
+        email: email,
+      });
+      console.log(loc);
+      if (email && name && method && bikeId && user_email) {
         const newloc = new paymentModel({
           email: email,
           name: name,
           bikeId: bikeId,
           location: loc.location,
           method: method,
+          user_email: user_email,
         });
 
         paymentModel.collection.insertOne(newloc);

@@ -31,6 +31,7 @@ router.post("/changepassword", UserController.changeUserPassword);
 router.get("/loggeduser", UserController.loggedUser);
 router.post("/bike", UserController.addUserBike);
 router.post("/rideend", UserController.rideover);
+router.post("/rideendpayment", UserController.rideoverpayment);
 router.post("/admin/auth", UserController.adminLogin);
 router.post("/admin/register", UserController.adminRegistration);
 router.post("/admin/bikecost", UserController.bikecosting);
